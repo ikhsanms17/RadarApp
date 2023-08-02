@@ -29,17 +29,22 @@ import java.text.DecimalFormat;
 public class App extends Application {
 
     private MapView mapView;
+    private ArcGISMap map;
+    private Scene scene;
     private Group group;
     private StackPane root;
     private GraphicsOverlay graphicsOverlay;
-    private Graphic scanningArea;
+    private Graphic scanningArea, graphic;
     private Point point, point2, posisi, centerPoint, pointCircle;
-    private Graphic graphic, graphText, graphText1, graphText2, graphText3;
-    private Graphic numGraphic, numGraphic1, numGraphic2, numGraphic3;
+    private Graphic graphText, graphText1, graphText2, graphText3;
+    private Graphic numGraphic, numGraphic1, numGraphic2, numGraphic3, numGraphic4, numGraphic5,
+            numGraphic6, numGraphic7, numGraphic8, numGraphic9, numGraphic10, numGraphic11;
     private TextSymbol radText, radText1, radText2, radText3;
-    private TextSymbol numText, numText1, numText2, numText3, numText4;
+    private TextSymbol numText, numText1, numText2, numText3, numText4,
+            numText5, numText6, numText7, numText8, numText9, numText10, numText11;
     private SimpleMarkerSymbol symbol, circle2, circle3, circle4, circle5, circle6;
-    private SimpleLineSymbol stroke;
+    private SimpleLineSymbol stroke, lineSymbol;
+    private VBox displayInfo;
     private AnimationTimer animationTimer;
     private Label label, labelLat, labelLong, labelDistance;
 
@@ -51,22 +56,6 @@ public class App extends Application {
     private double scale = 91000;
     private double radius = 0.0535;
     private double rotationAngle = 0;
-
-    private int numLines = 72; // Jumlah garis vertikal 1
-    private int numLines1 = 24; // Jumlah garis vertikal 2
-    private int numLines2 = 360; // Jumlah garis vertikal kecil
-    private int numLines3 = 8; // garis +
-    private double centerX = cenY - 10; // Koordinat x pusat
-    private double centerY = cenX - 5; // Koordinat y pusat
-    private double radLine = 265;
-    private double radLine4 = 270;
-    private double radLine1 = 210;
-    private double radLine2 = 140;
-    private double radLine3 = 70;
-    private double angle = 360.0 / numLines;
-    private double angle1 = 360.0 / numLines1;
-    private double angle2 = 360.0 / numLines2;
-    private double angle3 = 360.0 / numLines3;
 
     public static void main(String[] args) {
         launch(args);
@@ -80,12 +69,12 @@ public class App extends Application {
 
         // create a JavaFX scene with a stack pane as the root node, and add it to the scene
         root = new StackPane();
-        Scene scene = new Scene(root, WIDTH, HEIGHT, Color.TRANSPARENT);
+        scene = new Scene(root, WIDTH, HEIGHT, Color.TRANSPARENT);
 
         // create a map view to display the map and add it to the stack pane
         mapView = new MapView();
         root.getChildren().add(mapView);
-        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
+        map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
 
         // create node group for radar display
         group = new Group();
@@ -109,12 +98,6 @@ public class App extends Application {
         graphicsOverlay = new GraphicsOverlay();
         mapView.getGraphicsOverlays().add(graphicsOverlay);
 
-        // add location A and B
-        addObject( -6.989816573099767, 107.68786246812824, -6.838321160281938, 107.48785712513322);
-        addCircle( -6.8743094530729225, 107.58553101717864);
-        addNumRadar();
-        addNumber();
-
         // Create a Label to display latitude and longitude
         label = new Label();
         label.setText("Speed Rotation: ");
@@ -134,27 +117,33 @@ public class App extends Application {
         labelDistance.setTextFill(Color.WHITE);
 
         // create a control panel
-        VBox controlsVBox = new VBox(10);
-        controlsVBox.setBackground(new Background(new BackgroundFill(Paint.valueOf("rgba(0, 0, 0, 0.3)"), CornerRadii.EMPTY, Insets.EMPTY)));
-        controlsVBox.setPadding(new Insets(10.0));
-        controlsVBox.setMaxSize(200, 80);
-        controlsVBox.getStyleClass().add("panel-region");
+        displayInfo = new VBox(10);
+        displayInfo.setBackground(new Background(new BackgroundFill(Paint.valueOf("rgba(0, 0, 0, 0.3)"), CornerRadii.EMPTY, Insets.EMPTY)));
+        displayInfo.setPadding(new Insets(10.0));
+        displayInfo.setMaxSize(200, 80);
+        displayInfo.getStyleClass().add("panel-region");
 
         // add radio buttons to the control panel
-        controlsVBox.getChildren().addAll(labelLat, labelLong, labelDistance);
+        displayInfo.getChildren().addAll(labelLat, labelLong, labelDistance);
 
         // add scene view, label and control panel to the stack pane
-        root.getChildren().add(controlsVBox);
-        root.setAlignment(controlsVBox, Pos.TOP_LEFT);
-        root.setMargin(controlsVBox, new Insets(60, 0, 0, 20));
+        root.getChildren().add(displayInfo);
+        root.setAlignment(displayInfo, Pos.TOP_LEFT);
+        root.setMargin(displayInfo, new Insets(60, 0, 0, 20));
+
+        // add location A and B for movement object
+        addObject( -6.989816573099767, 107.68786246812824, -6.838321160281938, 107.48785712513322);
 
         centerPoint = new Point ( cenY, cenX, SpatialReferences.getWgs84());
+        addCircle();
+        addNumRadar();
+        addNumber();
 
         // create the scanning area graphic
         scanningArea = createScanningArea(centerPoint, radius, rotationAngle);
 
         // create a symbol for the scanning area graphic (line symbol)
-        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2);
+        lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2);
 
         // set the symbol to the scanning area graphic
         scanningArea.setSymbol(lineSymbol);
@@ -179,6 +168,7 @@ public class App extends Application {
 
         // start the animation
         animationTimer.start();
+
     }
 
     // Metode untuk membuat grafik overlay dan menambahkan objek poin ke dalamnya
@@ -232,10 +222,7 @@ public class App extends Application {
         graphicsOverlay.getOpacity();
     }
 
-    private void addCircle(double cX, double cY) {
-        // Create a point graphic at the specified location
-        pointCircle = new Point(cY, cX, SpatialReferences.getWgs84());
-
+    private void addCircle() {
         // Buat simbol untuk garis tepi (stroke)
         stroke = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2.0f);
 
@@ -255,11 +242,11 @@ public class App extends Application {
         circle6 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.WHITE, 5);
 
         // Create the graphic with the start point and symbol
-        Graphic graphic2 = new Graphic(pointCircle, circle2);
-        Graphic graphic3 = new Graphic(pointCircle, circle3);
-        Graphic graphic4 = new Graphic(pointCircle, circle4);
-        Graphic graphic5 = new Graphic(pointCircle, circle5);
-        Graphic graphic6 = new Graphic(pointCircle, circle6);
+        Graphic graphic2 = new Graphic(centerPoint, circle2);
+        Graphic graphic3 = new Graphic(centerPoint, circle3);
+        Graphic graphic4 = new Graphic(centerPoint, circle4);
+        Graphic graphic5 = new Graphic(centerPoint, circle5);
+        Graphic graphic6 = new Graphic(centerPoint, circle6);
 
         // Add the graphic to the graphics overlay
         graphicsOverlay.getGraphics().add(graphic2);
@@ -290,10 +277,10 @@ public class App extends Application {
         radText3.setOffsetX(214);
         radText3.setOffsetY(-5);
 
-        graphText = new Graphic(pointCircle, radText);
-        graphText1 = new Graphic(pointCircle, radText1);
-        graphText2 = new Graphic(pointCircle, radText2);
-        graphText3 = new Graphic(pointCircle, radText3);
+        graphText = new Graphic(centerPoint, radText);
+        graphText1 = new Graphic(centerPoint, radText1);
+        graphText2 = new Graphic(centerPoint, radText2);
+        graphText3 = new Graphic(centerPoint, radText3);
 
         graphicsOverlay.getGraphics().add(graphText);
         graphicsOverlay.getGraphics().add(graphText1);
@@ -302,35 +289,92 @@ public class App extends Application {
     }
 
     private void addNumber() {
+
         numText = new TextSymbol(12, "0", Color.WHITE,
                 TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
-        numText.setOffsetX(0);
         numText.setOffsetY(265);
+        numText.setAngle(0);
 
-        numText1 = new TextSymbol(12, "90", Color.WHITE,
+        numText1 = new TextSymbol(12, "30", Color.WHITE,
                 TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
-        numText1.setOffsetX(265);
-        numText1.setOffsetY(0);
+        numText1.setOffsetY(265);
+        numText1.setAngle(30);
 
-        numText2 = new TextSymbol(12, "180", Color.WHITE,
+        numText2 = new TextSymbol(12, "60", Color.WHITE,
                 TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
-        numText2.setOffsetX(0);
-        numText2.setOffsetY(-265);
+        numText2.setOffsetY(265);
+        numText2.setAngle(60);
 
-        numText3 = new TextSymbol(12, "270", Color.WHITE,
+        numText3 = new TextSymbol(12, "90", Color.WHITE,
                 TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
-        numText3.setOffsetX(-268);
-        numText3.setOffsetY(0);
+        numText3.setOffsetY(265);
+        numText3.setAngle(90);
 
-        numGraphic = new Graphic(pointCircle, numText);
-        numGraphic1 = new Graphic(pointCircle, numText1);
-        numGraphic2 = new Graphic(pointCircle, numText2);
-        numGraphic3 = new Graphic(pointCircle, numText3);
+        numText4 = new TextSymbol(12, "120", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText4.setOffsetY(265);
+        numText4.setAngle(120);
+
+        numText5 = new TextSymbol(12, "150", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText5.setOffsetY(265);
+        numText5.setAngle(150);
+
+        numText6 = new TextSymbol(12, "180", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText6.setOffsetY(265);
+        numText6.setAngle(180);
+
+        numText7 = new TextSymbol(12, "210", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText7.setOffsetY(265);
+        numText7.setAngle(210);
+
+        numText8 = new TextSymbol(12, "240", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText8.setOffsetY(265);
+        numText8.setAngle(240);
+
+        numText9 = new TextSymbol(12, "270", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText9.setOffsetY(265);
+        numText9.setAngle(270);
+
+        numText10 = new TextSymbol(12, "300", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText10.setOffsetY(265);
+        numText10.setAngle(300);
+
+        numText11 = new TextSymbol(12, "330", Color.WHITE,
+                TextSymbol.HorizontalAlignment.CENTER, TextSymbol.VerticalAlignment.MIDDLE);
+        numText11.setOffsetY(265);
+        numText11.setAngle(330);
+
+        numGraphic = new Graphic(centerPoint, numText);
+        numGraphic1 = new Graphic(centerPoint, numText1);
+        numGraphic2 = new Graphic(centerPoint, numText2);
+        numGraphic3 = new Graphic(centerPoint, numText3);
+        numGraphic4 = new Graphic(centerPoint, numText4);
+        numGraphic5 = new Graphic(centerPoint, numText5);
+        numGraphic6 = new Graphic(centerPoint, numText6);
+        numGraphic7 = new Graphic(centerPoint, numText7);
+        numGraphic8 = new Graphic(centerPoint, numText8);
+        numGraphic9 = new Graphic(centerPoint, numText9);
+        numGraphic10 = new Graphic(centerPoint, numText10);
+        numGraphic11 = new Graphic(centerPoint, numText11);
 
         graphicsOverlay.getGraphics().add(numGraphic);
         graphicsOverlay.getGraphics().add(numGraphic1);
         graphicsOverlay.getGraphics().add(numGraphic2);
         graphicsOverlay.getGraphics().add(numGraphic3);
+        graphicsOverlay.getGraphics().add(numGraphic4);
+        graphicsOverlay.getGraphics().add(numGraphic5);
+        graphicsOverlay.getGraphics().add(numGraphic6);
+        graphicsOverlay.getGraphics().add(numGraphic7);
+        graphicsOverlay.getGraphics().add(numGraphic8);
+        graphicsOverlay.getGraphics().add(numGraphic9);
+        graphicsOverlay.getGraphics().add(numGraphic10);
+        graphicsOverlay.getGraphics().add(numGraphic11);
 
     }
 
