@@ -22,6 +22,8 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 
 import java.text.DecimalFormat;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class App extends Application {
 
@@ -296,7 +298,7 @@ public class App extends Application {
             Graphic lineGraph5 = new Graphic(polyline5, lineRad);
             graphicsOverlay.getGraphics().add(lineGraph5);
 
-            logic();
+//            logic();
         }
     }
 
@@ -614,13 +616,14 @@ public class App extends Application {
                 graphic.setGeometry(posisi);
 
                 logic();
-                displayLatLon();
+//                displayLatLon();
             }
         };
         animationTimer.start();
     }
 
     private void displayLatLon(){
+
         // get distance object
         double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
                 new LinearUnit(LinearUnitId.KILOMETERS),
@@ -651,18 +654,41 @@ public class App extends Application {
     }
 
     private void logic(){
+        // get distance object
+        double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+                new LinearUnit(LinearUnitId.KILOMETERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getDistance();
+
+        double degrees = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+                new LinearUnit(LinearUnitId.KILOMETERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getAzimuth2();
+
+        //   set lat lon object
+        double sudutRad = Math.toRadians(degrees);
+
+        double lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
+        double lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
+
         // logic for object
         boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
+
         if (logic){
             graphic.setVisible(true);
-            scanningArea.getGeometry();
-            GeometryType newGeometry = GeometryType.POINT;
-            newPoint = (Point) GeometryEngine.intersection(graphic.getGeometry(), scanningArea.getGeometry().getExtent().getCenter());
-            newGraphic = new Graphic(newPoint, symbol);
-            newGraphic.setVisible(true);
-            graphicsOverlay.getGraphics().add(newGraphic);
+
+            DecimalFormat df = new DecimalFormat("0.000000");
+            DecimalFormat df2 = new DecimalFormat("0.000");
+            labelSudut.setText("Sudut        : " + df.format(degrees));
+            labelDistance.setText("Distance   : " + df2.format(distance) + " km");
+            labelLat.setText("Latitude    : " + df.format(lat));
+            labelLong.setText("Longitude : " + df.format(lon));
+
+//            Graphic intersectGraphic = new Graphic(graphic.getGeometry(), symbol);
+//            graphicsOverlay.getGraphics().add(intersectGraphic);
+
         } else {
-            newGraphic.setVisible(false);
+            graphic.setVisible(false);
         }
     }
 
