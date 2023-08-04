@@ -19,11 +19,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 public class App extends Application {
 
@@ -34,7 +32,7 @@ public class App extends Application {
     private StackPane root;
     private GraphicsOverlay graphicsOverlay;
     private Graphic scanningArea, graphic;
-    private Point point, point2, posisi, centerPoint;
+    private Point point, point2, posisi, centerPoint, circle;
     private Point tA, tA1, tA2, tA3, tA4, tA5,
             tA6, tA7, tA8, tA9, tA10, titikAwal;
     private Graphic graphText, graphText1, graphText2, graphText3;
@@ -49,8 +47,7 @@ public class App extends Application {
     private VBox displayInfo;
     private AnimationTimer animationTimer;
     private Label label, labelLat, labelLong, labelDistance;
-    private PointCollection points;
-    private Polyline polyline;
+    private PointCollection points, pointCircle;
 
     private static final int WIDTH = 1000;   // Width of the radar display
     private static final int HEIGHT = 700;  // Height of the radar display
@@ -301,34 +298,73 @@ public class App extends Application {
         // Buat simbol untuk garis tepi (stroke)
         stroke = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2.0f);
 
-        // Create a symbol for the moving object (a simple red circle)
-        circle2 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.TRANSPARENT, 500);
-        circle2.setOutline(stroke);
+        for(int i = 0 ; i <= 360 ; i++){
+            double cX = centerPoint.getX() + 0.0536 * Math.cos(Math.toRadians(i));
+            double cY = centerPoint.getY() + 0.0536 * Math.sin(Math.toRadians(i));
+            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
 
-        circle3 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.TRANSPARENT, 375);
-        circle3.setOutline(stroke);
+            double cenX = centerPoint.getX() + 0.0536 * Math.cos(Math.toRadians(1 + i));
+            double cenY = centerPoint.getY() + 0.0536 * Math.sin(Math.toRadians(1 + i));
+            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-        circle4 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.TRANSPARENT, 250);
-        circle4.setOutline(stroke);
+            PointCollection pointCircle = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle.add(circle);
+            pointCircle.add(circle2);
+            Polygon polyCircle= new Polygon(pointCircle);
+            Graphic graphCircle = new Graphic(polyCircle, stroke);
+            graphicsOverlay.getGraphics().add(graphCircle);
+        }
 
-        circle5 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.TRANSPARENT, 125);
-        circle5.setOutline(stroke);
+        for(int i = 0 ; i <= 360 ; i++){
+            double cX = centerPoint.getX() + 0.0405 * Math.cos(Math.toRadians(i));
+            double cY = centerPoint.getY() + 0.0405 * Math.sin(Math.toRadians(i));
+            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
 
-        circle6 = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.WHITE, 2);
+            double cenX = centerPoint.getX() + 0.0405 * Math.cos(Math.toRadians(1 + i));
+            double cenY = centerPoint.getY() + 0.0405 * Math.sin(Math.toRadians(1 + i));
+            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-        // Create the graphic with the start point and symbol
-        Graphic graphic2 = new Graphic(centerPoint, circle2);
-        Graphic graphic3 = new Graphic(centerPoint, circle3);
-        Graphic graphic4 = new Graphic(centerPoint, circle4);
-        Graphic graphic5 = new Graphic(centerPoint, circle5);
-        Graphic graphic6 = new Graphic(centerPoint, circle6);
+            PointCollection pointCircle1 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle1.add(circle);
+            pointCircle1.add(circle2);
+            Polygon polyCircle1= new Polygon(pointCircle1);
+            Graphic graphCircle1 = new Graphic(polyCircle1, stroke);
+            graphicsOverlay.getGraphics().add(graphCircle1);
+        }
 
-        // Add the graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(graphic2);
-        graphicsOverlay.getGraphics().add(graphic3);
-        graphicsOverlay.getGraphics().add(graphic4);
-        graphicsOverlay.getGraphics().add(graphic5);
-        graphicsOverlay.getGraphics().add(graphic6);
+        for(int i = 0 ; i <= 360 ; i++){
+            double cX = centerPoint.getX() + 0.027 * Math.cos(Math.toRadians(i));
+            double cY = centerPoint.getY() + 0.027 * Math.sin(Math.toRadians(i));
+            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
+
+            double cenX = centerPoint.getX() + 0.027 * Math.cos(Math.toRadians(1 + i));
+            double cenY = centerPoint.getY() + 0.027 * Math.sin(Math.toRadians(1 + i));
+            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
+
+            PointCollection pointCircle2 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle2.add(circle);
+            pointCircle2.add(circle2);
+            Polygon polyCircle2 = new Polygon(pointCircle2);
+            Graphic graphCircle2 = new Graphic(polyCircle2, stroke);
+            graphicsOverlay.getGraphics().add(graphCircle2);
+        }
+
+        for(int i = 0 ; i <= 360 ; i++){
+            double cX = centerPoint.getX() + 0.0138 * Math.cos(Math.toRadians(i));
+            double cY = centerPoint.getY() + 0.0138 * Math.sin(Math.toRadians(i));
+            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
+
+            double cenX = centerPoint.getX() + 0.0138 * Math.cos(Math.toRadians(1 + i));
+            double cenY = centerPoint.getY() + 0.0138 * Math.sin(Math.toRadians(1 + i));
+            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
+
+            PointCollection pointCircle3 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle3.add(circle);
+            pointCircle3.add(circle2);
+            Polygon polyCircle3 = new Polygon(pointCircle3);
+            Graphic graphCircle3 = new Graphic(polyCircle3, stroke);
+            graphicsOverlay.getGraphics().add(graphCircle3);
+        }
     }
 
     private void addNumRadar() {
@@ -537,7 +573,6 @@ public class App extends Application {
         return new Graphic(polygon);
     }
 
-    // Metode untuk membuat grafik overlay dan menambahkan objek poin ke dalamnya
     private void addObject(double x, double y, double x1, double y1) {
         // Create a point graphic at the specified location
         point = new Point(y, x, SpatialReferences.getWgs84());
@@ -570,42 +605,43 @@ public class App extends Application {
 
                 // Set the current location for the graphic
                 graphic.setGeometry(posisi);
-
-                // get distance object
-                double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
-                        new LinearUnit(LinearUnitId.METERS),
-                        new AngularUnit(AngularUnitId.DEGREES),
-                        GeodeticCurveType.GEODESIC).getDistance();
-
-                // get degrees object
-                double sudut = GeometryEngine.distanceGeodetic(posisi, centerPoint,
-                        new LinearUnit(LinearUnitId.METERS),
-                        new AngularUnit(AngularUnitId.DEGREES),
-                        GeodeticCurveType.GEODESIC).getAzimuth1();
-
-                // logic for object
-                boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
-                if (logic){
-                    graphic.setVisible(true);
-//                    graphic.get
-                } else {
-                    graphic.setVisible(false);
-                }
-
-//                double sudut_rad = Math.toRadians(sudut);
-//                double lat = centerPoint.getY() + (distance * Math.sin(sudut_rad));
-//                double lon = centerPoint.getX() + (distance * Math.cos(sudut_rad));
-
-                // display lat, long, and distance
-                DecimalFormat df = new DecimalFormat("0.000000");
-                DecimalFormat df2 = new DecimalFormat("0.000");
-                labelLat.setText("Latitude    : " + df.format(currentY));
-                labelLong.setText("Longitude : " + df.format(currentX));
-                labelDistance.setText("Distance   : " + df2.format(distance) + " m");
+                logic();
             }
         };
 
         animationTimer.start();
+    }
+
+    private void logic(){
+
+        // get distance object
+        double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+                new LinearUnit(LinearUnitId.METERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getDistance();
+
+        // get degrees object
+//                double sudut = GeometryEngine.areaGeodetic()
+
+        // logic for object
+        boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
+        if (logic){
+            graphic.setVisible(true);
+        } else {
+            graphic.setVisible(false);
+        }
+
+//        double sudutRad = Math.toRadians(sudut);
+//        double lat = centerPoint.getX() + (distance * Math.sin(sudutRad));
+//        double lon = centerPoint.getY() + (distance * Math.cos(sudutRad));
+
+
+        // display lat, long, and distance
+        DecimalFormat df = new DecimalFormat("0.000000");
+        DecimalFormat df2 = new DecimalFormat("0.000");
+//        labelLat.setText("Latitude    : " + df.format(angle));
+//        labelLong.setText("Longitude : " + df.format(sudut_rad));
+        labelDistance.setText("Distance   : " + df2.format(distance) + " m");
     }
 
     @Override
