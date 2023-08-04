@@ -31,8 +31,8 @@ public class App extends Application {
     private Group group;
     private StackPane root;
     private GraphicsOverlay graphicsOverlay;
-    private Graphic scanningArea, graphic;
-    private Point point, point2, posisi, centerPoint, circle;
+    private Graphic scanningArea, graphic, newGraphic;
+    private Point point, point2, posisi, centerPoint, newPoint;
     private Point tA, tA1, tA2, tA3, tA4, tA5,
             tA6, tA7, tA8, tA9, tA10, titikAwal;
     private Graphic graphText, graphText1, graphText2, graphText3;
@@ -46,7 +46,7 @@ public class App extends Application {
     private SimpleFillSymbol fillRadar;
     private VBox displayInfo;
     private AnimationTimer animationTimer;
-    private Label label, labelLat, labelLong, labelDistance;
+    private Label label, labelLat, labelLong, labelDistance, labelSudut;
     private PointCollection points, pointCircle;
 
     private static final int WIDTH = 1000;   // Width of the radar display
@@ -105,6 +105,15 @@ public class App extends Application {
         label.setTextFill(Color.WHITE);
 
         // Create a Label to display latitude and longitude
+        labelSudut = new Label();
+        labelSudut.setStyle("-fx-padding: 5px;");
+        labelSudut.setTextFill(Color.WHITE);
+
+        labelDistance = new Label();
+        labelDistance.setStyle("-fx-padding: 5px;");
+        labelDistance.setTextFill(Color.WHITE);
+
+        // Create a Label to display latitude and longitude
         labelLat = new Label();
         labelLat.setStyle("-fx-padding: 5px;");
         labelLat.setTextFill(Color.WHITE);
@@ -112,10 +121,6 @@ public class App extends Application {
         labelLong = new Label();
         labelLong.setStyle("-fx-padding: 5px;");
         labelLong.setTextFill(Color.WHITE);
-
-        labelDistance = new Label();
-        labelDistance.setStyle("-fx-padding: 5px;");
-        labelDistance.setTextFill(Color.WHITE);
 
         // create a control panel
         displayInfo = new VBox(10);
@@ -125,7 +130,7 @@ public class App extends Application {
         displayInfo.getStyleClass().add("panel-region");
 
         // add radio buttons to the control panel
-        displayInfo.getChildren().addAll(labelLat, labelLong, labelDistance);
+        displayInfo.getChildren().addAll(labelSudut, labelDistance, labelLat, labelLong);
 
         // add scene view, label and control panel to the stack pane
         root.getChildren().add(displayInfo);
@@ -290,8 +295,9 @@ public class App extends Application {
             Polyline polyline5 = new Polyline(points5);
             Graphic lineGraph5 = new Graphic(polyline5, lineRad);
             graphicsOverlay.getGraphics().add(lineGraph5);
-        }
 
+            logic();
+        }
     }
 
     private void addCircle() {
@@ -583,6 +589,7 @@ public class App extends Application {
 
         // Create the graphic with the start point and symbol
         graphic = new Graphic(point, symbol);
+        graphic.setVisible(false);
 
         // Add the graphic to the graphics overlay
         graphicsOverlay.getGraphics().add(graphic);
@@ -605,43 +612,58 @@ public class App extends Application {
 
                 // Set the current location for the graphic
                 graphic.setGeometry(posisi);
+
                 logic();
+                displayLatLon();
             }
         };
-
         animationTimer.start();
     }
 
-    private void logic(){
-
+    private void displayLatLon(){
         // get distance object
         double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
-                new LinearUnit(LinearUnitId.METERS),
+                new LinearUnit(LinearUnitId.KILOMETERS),
                 new AngularUnit(AngularUnitId.DEGREES),
                 GeodeticCurveType.GEODESIC).getDistance();
 
-        // get degrees object
-//                double sudut = GeometryEngine.areaGeodetic()
+        double degrees = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+                new LinearUnit(LinearUnitId.KILOMETERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getAzimuth2();
 
-        // logic for object
-        boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
-        if (logic){
-            graphic.setVisible(true);
-        } else {
-            graphic.setVisible(false);
-        }
+        //   set lat lon object
+        double sudutRad = Math.toRadians(degrees);
 
-//        double sudutRad = Math.toRadians(sudut);
-//        double lat = centerPoint.getX() + (distance * Math.sin(sudutRad));
-//        double lon = centerPoint.getY() + (distance * Math.cos(sudutRad));
+        double lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
+        double lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
+
 
 
         // display lat, long, and distance
         DecimalFormat df = new DecimalFormat("0.000000");
         DecimalFormat df2 = new DecimalFormat("0.000");
-//        labelLat.setText("Latitude    : " + df.format(angle));
-//        labelLong.setText("Longitude : " + df.format(sudut_rad));
-        labelDistance.setText("Distance   : " + df2.format(distance) + " m");
+        labelSudut.setText("Sudut        : " + df.format(degrees));
+        labelDistance.setText("Distance   : " + df2.format(distance) + " km");
+        labelLat.setText("Latitude    : " + df.format(lat));
+        labelLong.setText("Longitude : " + df.format(lon));
+
+    }
+
+    private void logic(){
+        // logic for object
+        boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
+        if (logic){
+            graphic.setVisible(true);
+            scanningArea.getGeometry();
+            GeometryType newGeometry = GeometryType.POINT;
+            newPoint = (Point) GeometryEngine.intersection(graphic.getGeometry(), scanningArea.getGeometry().getExtent().getCenter());
+            newGraphic = new Graphic(newPoint, symbol);
+            newGraphic.setVisible(true);
+            graphicsOverlay.getGraphics().add(newGraphic);
+        } else {
+            newGraphic.setVisible(false);
+        }
     }
 
     @Override
