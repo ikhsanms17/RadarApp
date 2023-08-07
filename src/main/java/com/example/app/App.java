@@ -11,6 +11,7 @@ import com.esri.arcgisruntime.symbology.*;
 
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.scene.control.Button;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -22,8 +23,6 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 
 import java.text.DecimalFormat;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class App extends Application {
 
@@ -33,31 +32,33 @@ public class App extends Application {
     private Group group;
     private StackPane root;
     private GraphicsOverlay graphicsOverlay;
-    private Graphic scanningArea, graphic, newGraphic;
-    private Point point, point2, posisi, centerPoint, newPoint;
-    private Point tA, tA1, tA2, tA3, tA4, tA5,
-            tA6, tA7, tA8, tA9, tA10, titikAwal;
-    private Graphic graphText, graphText1, graphText2, graphText3;
+    private Graphic scanningArea, graphic, updateObject;
+    private Point point, point2, posisi, centerPoint, rangeAwal, rangeAkhir;
+    private SimpleMarkerSymbol symbol;
+    private SimpleLineSymbol stroke, lineSymbol, lineRad;
+    private SimpleFillSymbol fillRadar, fillRange, fillRange2;
+    private VBox displayInfo;
+    private AnimationTimer animationTimer;
+    private Label label, labelLat, labelLong, labelDistance, labelSudut;
+    private PointCollection points, pointCircle, pointCircle1, pointCircle2, pointCircle3, pointRange;
+    private DecimalFormat df, df2;
+    private Polygon polyCircle, polyCircle1, polyCircle2, polyCircle3, polyRange;
+    private Point tA, tA1, tA2, tA3, tA4, tA5, tA6, tA7, tA8, tA9, tA10, titikAwal;
+    private Graphic graphText, graphText1, graphText2, graphText3, graphRange;
+    private Graphic graphCircle, graphCircle1, graphCircle2, graphCircle3, newGraph, newGraph1;
     private Graphic numGraphic, numGraphic1, numGraphic2, numGraphic3, numGraphic4, numGraphic5,
             numGraphic6, numGraphic7, numGraphic8, numGraphic9, numGraphic10, numGraphic11;
     private TextSymbol radText, radText1, radText2, radText3;
     private TextSymbol numText, numText1, numText2, numText3, numText4,
             numText5, numText6, numText7, numText8, numText9, numText10, numText11;
-    private SimpleMarkerSymbol symbol, circle2, circle3, circle4, circle5, circle6;
-    private SimpleLineSymbol stroke, lineSymbol, lineRad;
-    private SimpleFillSymbol fillRadar;
-    private VBox displayInfo;
-    private AnimationTimer animationTimer;
-    private Label label, labelLat, labelLong, labelDistance, labelSudut;
-    private PointCollection points, pointCircle;
 
     private static final int WIDTH = 1000;   // Width of the radar display
     private static final int HEIGHT = 700;  // Height of the radar display
-    private double cenX = -6.8743094530729225;
-    private double cenY = 107.58553101717864;
+    private final double cenX = -6.8743094530729225;
+    private final double cenY = 107.58553101717864;
     private double progress = 0;
-    private double scale = 91000;
-    private double radius = 0.0535;
+    private final double scale = 91000;
+    private final double radius = 0.0535; // 6 / 111
     private double rotationAngle = 0;
 
     public static void main(String[] args) {
@@ -107,20 +108,20 @@ public class App extends Application {
         label.setTextFill(Color.WHITE);
 
         // Create a Label to display latitude and longitude
-        labelSudut = new Label();
+        labelSudut = new Label("Sudut        : ");
         labelSudut.setStyle("-fx-padding: 5px;");
         labelSudut.setTextFill(Color.WHITE);
 
-        labelDistance = new Label();
+        labelDistance = new Label("Distance   : ");
         labelDistance.setStyle("-fx-padding: 5px;");
         labelDistance.setTextFill(Color.WHITE);
 
         // Create a Label to display latitude and longitude
-        labelLat = new Label();
+        labelLat = new Label("Latitude    : " );
         labelLat.setStyle("-fx-padding: 5px;");
         labelLat.setTextFill(Color.WHITE);
 
-        labelLong = new Label();
+        labelLong = new Label("Longitude : ");
         labelLong.setStyle("-fx-padding: 5px;");
         labelLong.setTextFill(Color.WHITE);
 
@@ -140,7 +141,8 @@ public class App extends Application {
         root.setMargin(displayInfo, new Insets(60, 0, 0, 20));
 
         // add location A and B for movement object
-        addObject( -6.932581890834847, 107.64582546015241, -6.812463080435314, 107.55275371743387);
+//        addObject( -6.932581890834847, 107.64582546015241, -6.812463080435314, 107.55275371743387);
+        addObject( -6.938633031473232, 107.55341813907535, -6.820136022973438, 107.60990126818064);
 
         centerPoint = new Point ( cenY, cenX, SpatialReferences.getWgs84());
         addCircle();
@@ -297,8 +299,6 @@ public class App extends Application {
             Polyline polyline5 = new Polyline(points5);
             Graphic lineGraph5 = new Graphic(polyline5, lineRad);
             graphicsOverlay.getGraphics().add(lineGraph5);
-
-//            logic();
         }
     }
 
@@ -315,11 +315,11 @@ public class App extends Application {
             double cenY = centerPoint.getY() + 0.0536 * Math.sin(Math.toRadians(1 + i));
             Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-            PointCollection pointCircle = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle = new PointCollection(SpatialReferences.getWgs84());
             pointCircle.add(circle);
             pointCircle.add(circle2);
-            Polygon polyCircle= new Polygon(pointCircle);
-            Graphic graphCircle = new Graphic(polyCircle, stroke);
+            polyCircle= new Polygon(pointCircle);
+            graphCircle = new Graphic(polyCircle, stroke);
             graphicsOverlay.getGraphics().add(graphCircle);
         }
 
@@ -332,11 +332,11 @@ public class App extends Application {
             double cenY = centerPoint.getY() + 0.0405 * Math.sin(Math.toRadians(1 + i));
             Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-            PointCollection pointCircle1 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle1 = new PointCollection(SpatialReferences.getWgs84());
             pointCircle1.add(circle);
             pointCircle1.add(circle2);
-            Polygon polyCircle1= new Polygon(pointCircle1);
-            Graphic graphCircle1 = new Graphic(polyCircle1, stroke);
+            polyCircle1= new Polygon(pointCircle1);
+            graphCircle1 = new Graphic(polyCircle1, stroke);
             graphicsOverlay.getGraphics().add(graphCircle1);
         }
 
@@ -349,11 +349,11 @@ public class App extends Application {
             double cenY = centerPoint.getY() + 0.027 * Math.sin(Math.toRadians(1 + i));
             Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-            PointCollection pointCircle2 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle2 = new PointCollection(SpatialReferences.getWgs84());
             pointCircle2.add(circle);
             pointCircle2.add(circle2);
-            Polygon polyCircle2 = new Polygon(pointCircle2);
-            Graphic graphCircle2 = new Graphic(polyCircle2, stroke);
+            polyCircle2 = new Polygon(pointCircle2);
+            graphCircle2 = new Graphic(polyCircle2, stroke);
             graphicsOverlay.getGraphics().add(graphCircle2);
         }
 
@@ -366,11 +366,11 @@ public class App extends Application {
             double cenY = centerPoint.getY() + 0.0138 * Math.sin(Math.toRadians(1 + i));
             Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
-            PointCollection pointCircle3 = new PointCollection(SpatialReferences.getWgs84());
+            pointCircle3 = new PointCollection(SpatialReferences.getWgs84());
             pointCircle3.add(circle);
             pointCircle3.add(circle2);
-            Polygon polyCircle3 = new Polygon(pointCircle3);
-            Graphic graphCircle3 = new Graphic(polyCircle3, stroke);
+            polyCircle3 = new Polygon(pointCircle3);
+            graphCircle3 = new Graphic(polyCircle3, stroke);
             graphicsOverlay.getGraphics().add(graphCircle3);
         }
     }
@@ -393,7 +393,7 @@ public class App extends Application {
 
         radText3 = new TextSymbol(8, "6000 m", Color.WHITE,
                 TextSymbol.HorizontalAlignment.LEFT, TextSymbol.VerticalAlignment.TOP);
-        radText3.setOffsetX(214);
+        radText3.setOffsetX(205);
         radText3.setOffsetY(-5);
 
         graphText = new Graphic(centerPoint, radText);
@@ -515,6 +515,7 @@ public class App extends Application {
     }
 
     private Graphic createScanningArea(Point centerPoint, double radius, double rotationAngle) {
+
         // create the start point of the scanning area line
         titikAwal = new Point(centerPoint.getX(), centerPoint.getY(), SpatialReferences.getWgs84());
 
@@ -587,7 +588,7 @@ public class App extends Application {
         point2 = new Point(y1, x1, SpatialReferences.getWgs84());
 
         // Create a symbol for the moving object (a simple red circle)
-        symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 10);
+        symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 10);
 
         // Create the graphic with the start point and symbol
         graphic = new Graphic(point, symbol);
@@ -616,41 +617,9 @@ public class App extends Application {
                 graphic.setGeometry(posisi);
 
                 logic();
-//                displayLatLon();
             }
         };
         animationTimer.start();
-    }
-
-    private void displayLatLon(){
-
-        // get distance object
-        double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
-                new LinearUnit(LinearUnitId.KILOMETERS),
-                new AngularUnit(AngularUnitId.DEGREES),
-                GeodeticCurveType.GEODESIC).getDistance();
-
-        double degrees = GeometryEngine.distanceGeodetic(posisi, centerPoint,
-                new LinearUnit(LinearUnitId.KILOMETERS),
-                new AngularUnit(AngularUnitId.DEGREES),
-                GeodeticCurveType.GEODESIC).getAzimuth2();
-
-        //   set lat lon object
-        double sudutRad = Math.toRadians(degrees);
-
-        double lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
-        double lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
-
-
-
-        // display lat, long, and distance
-        DecimalFormat df = new DecimalFormat("0.000000");
-        DecimalFormat df2 = new DecimalFormat("0.000");
-        labelSudut.setText("Sudut        : " + df.format(degrees));
-        labelDistance.setText("Distance   : " + df2.format(distance) + " km");
-        labelLat.setText("Latitude    : " + df.format(lat));
-        labelLong.setText("Longitude : " + df.format(lon));
-
     }
 
     private void logic(){
@@ -664,32 +633,44 @@ public class App extends Application {
                 new LinearUnit(LinearUnitId.KILOMETERS),
                 new AngularUnit(AngularUnitId.DEGREES),
                 GeodeticCurveType.GEODESIC).getAzimuth2();
+        double sudut = degrees;
+        if(sudut < 0){
+            sudut += 360;
+        }
 
         //   set lat lon object
         double sudutRad = Math.toRadians(degrees);
-
         double lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
         double lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
 
+        df = new DecimalFormat("0.000000");
+        df2 = new DecimalFormat("0.000");
+
         // logic for object
         boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
-
         if (logic){
             graphic.setVisible(true);
 
-            DecimalFormat df = new DecimalFormat("0.000000");
-            DecimalFormat df2 = new DecimalFormat("0.000");
-            labelSudut.setText("Sudut        : " + df.format(degrees));
+            labelSudut.setText("Sudut        : " + df2.format(sudut) + "°");
             labelDistance.setText("Distance   : " + df2.format(distance) + " km");
             labelLat.setText("Latitude    : " + df.format(lat));
             labelLong.setText("Longitude : " + df.format(lon));
 
-//            Graphic intersectGraphic = new Graphic(graphic.getGeometry(), symbol);
-//            graphicsOverlay.getGraphics().add(intersectGraphic);
-
+            updateObject();
         } else {
             graphic.setVisible(false);
         }
+    }
+
+    private void updateObject(){
+        // remove the old scanning area graphic
+        graphicsOverlay.getGraphics().remove(updateObject);
+
+        // create the new scanning area graphic
+        updateObject =  new Graphic(graphic.getGeometry(), symbol);
+
+        // add the new scanning area graphic to the graphics overlay
+        graphicsOverlay.getGraphics().add(updateObject);
     }
 
     @Override
