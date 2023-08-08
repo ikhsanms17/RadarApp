@@ -11,7 +11,6 @@ import com.esri.arcgisruntime.symbology.*;
 
 import javafx.animation.*;
 import javafx.application.Application;
-import javafx.scene.control.Button;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -33,19 +32,19 @@ public class App extends Application {
     private StackPane root;
     private GraphicsOverlay graphicsOverlay;
     private Graphic scanningArea, graphic, updateObject;
-    private Point point, point2, posisi, centerPoint, rangeAwal, rangeAkhir;
-    private SimpleMarkerSymbol symbol;
+    private Point point, point2, posisi, centerPoint, range, range1, range2, range3, range4, range5;
+    private SimpleMarkerSymbol symbol, warningSymbol, dangerSymbol;
     private SimpleLineSymbol stroke, lineSymbol, lineRad;
-    private SimpleFillSymbol fillRadar, fillRange, fillRange2;
+    private SimpleFillSymbol fillRadar, fillRange, fillRange1;
     private VBox displayInfo;
     private AnimationTimer animationTimer;
     private Label label, labelLat, labelLong, labelDistance, labelSudut;
-    private PointCollection points, pointCircle, pointCircle1, pointCircle2, pointCircle3, pointRange;
+    private PointCollection points, pointCircle, pointCircle1, pointCircle2, pointCircle3, pointCircle4;
     private DecimalFormat df, df2;
-    private Polygon polyCircle, polyCircle1, polyCircle2, polyCircle3, polyRange;
+    private Polyline polyCircle, polyCircle1, polyCircle2, polyCircle3, polyCircle4;
     private Point tA, tA1, tA2, tA3, tA4, tA5, tA6, tA7, tA8, tA9, tA10, titikAwal;
-    private Graphic graphText, graphText1, graphText2, graphText3, graphRange;
-    private Graphic graphCircle, graphCircle1, graphCircle2, graphCircle3, newGraph, newGraph1;
+    private Graphic graphText, graphText1, graphText2, graphText3, graphRange, graphRange1;
+    private Graphic graphCircle, graphCircle1, graphCircle2, graphCircle3, graphCircle4;
     private Graphic numGraphic, numGraphic1, numGraphic2, numGraphic3, numGraphic4, numGraphic5,
             numGraphic6, numGraphic7, numGraphic8, numGraphic9, numGraphic10, numGraphic11;
     private TextSymbol radText, radText1, radText2, radText3;
@@ -305,6 +304,24 @@ public class App extends Application {
     private void addCircle() {
         // Buat simbol untuk garis tepi (stroke)
         stroke = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2.0f);
+        fillRange = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, 0x01FFFF00, null);
+        fillRange1 = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, 0x01FF0000, null);
+
+        // warning symbol with yellow
+        warningSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0x40FFFF00, 250);
+        // Create the graphic with the start point and symbol
+        graphRange = new Graphic(centerPoint, warningSymbol);
+        graphRange.setVisible(false);
+        // Add the graphic to the graphics overlay
+        graphicsOverlay.getGraphics().add(graphRange);
+
+        // danger symbol with red
+        dangerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0x40FF0000, 125);
+        // Create the graphic with the start point and symbol
+        graphRange1 = new Graphic(centerPoint, dangerSymbol);
+        graphRange1.setVisible(false);
+        // Add the graphic to the graphics overlay
+        graphicsOverlay.getGraphics().add(graphRange1);
 
         for(int i = 0 ; i <= 360 ; i++){
             double cX = centerPoint.getX() + 0.0536 * Math.cos(Math.toRadians(i));
@@ -318,7 +335,7 @@ public class App extends Application {
             pointCircle = new PointCollection(SpatialReferences.getWgs84());
             pointCircle.add(circle);
             pointCircle.add(circle2);
-            polyCircle= new Polygon(pointCircle);
+            polyCircle= new Polyline(pointCircle);
             graphCircle = new Graphic(polyCircle, stroke);
             graphicsOverlay.getGraphics().add(graphCircle);
         }
@@ -335,7 +352,7 @@ public class App extends Application {
             pointCircle1 = new PointCollection(SpatialReferences.getWgs84());
             pointCircle1.add(circle);
             pointCircle1.add(circle2);
-            polyCircle1= new Polygon(pointCircle1);
+            polyCircle1= new Polyline(pointCircle1);
             graphCircle1 = new Graphic(polyCircle1, stroke);
             graphicsOverlay.getGraphics().add(graphCircle1);
         }
@@ -343,16 +360,16 @@ public class App extends Application {
         for(int i = 0 ; i <= 360 ; i++){
             double cX = centerPoint.getX() + 0.027 * Math.cos(Math.toRadians(i));
             double cY = centerPoint.getY() + 0.027 * Math.sin(Math.toRadians(i));
-            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
+            range = new Point(cX, cY, SpatialReferences.getWgs84());
 
             double cenX = centerPoint.getX() + 0.027 * Math.cos(Math.toRadians(1 + i));
             double cenY = centerPoint.getY() + 0.027 * Math.sin(Math.toRadians(1 + i));
-            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
+            range1 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
             pointCircle2 = new PointCollection(SpatialReferences.getWgs84());
-            pointCircle2.add(circle);
-            pointCircle2.add(circle2);
-            polyCircle2 = new Polygon(pointCircle2);
+            pointCircle2.add(range);
+            pointCircle2.add(range1);
+            polyCircle2 = new Polyline(pointCircle2);
             graphCircle2 = new Graphic(polyCircle2, stroke);
             graphicsOverlay.getGraphics().add(graphCircle2);
         }
@@ -360,16 +377,16 @@ public class App extends Application {
         for(int i = 0 ; i <= 360 ; i++){
             double cX = centerPoint.getX() + 0.0138 * Math.cos(Math.toRadians(i));
             double cY = centerPoint.getY() + 0.0138 * Math.sin(Math.toRadians(i));
-            Point circle = new Point(cX, cY, SpatialReferences.getWgs84());
+            range2 = new Point(cX, cY, SpatialReferences.getWgs84());
 
             double cenX = centerPoint.getX() + 0.0138 * Math.cos(Math.toRadians(1 + i));
             double cenY = centerPoint.getY() + 0.0138 * Math.sin(Math.toRadians(1 + i));
-            Point circle2 = new Point(cenX, cenY, SpatialReferences.getWgs84());
+            range3 = new Point(cenX, cenY, SpatialReferences.getWgs84());
 
             pointCircle3 = new PointCollection(SpatialReferences.getWgs84());
-            pointCircle3.add(circle);
-            pointCircle3.add(circle2);
-            polyCircle3 = new Polygon(pointCircle3);
+            pointCircle3.add(range2);
+            pointCircle3.add(range3);
+            polyCircle3 = new Polyline(pointCircle3);
             graphCircle3 = new Graphic(polyCircle3, stroke);
             graphicsOverlay.getGraphics().add(graphCircle3);
         }
@@ -563,7 +580,6 @@ public class App extends Application {
         double eY10 = centerPoint.getY() + radius * Math.sin(Math.toRadians(rotationAngle + 30));
         tA10 = new Point(eX10, eY10, SpatialReferences.getWgs84());
 
-
         // create a polyline from the start and end points
         points = new PointCollection(SpatialReferences.getWgs84());
         points.add(titikAwal);
@@ -633,6 +649,7 @@ public class App extends Application {
                 new LinearUnit(LinearUnitId.KILOMETERS),
                 new AngularUnit(AngularUnitId.DEGREES),
                 GeodeticCurveType.GEODESIC).getAzimuth2();
+
         double sudut = degrees;
         if(sudut < 0){
             sudut += 360;
@@ -657,8 +674,17 @@ public class App extends Application {
             labelLong.setText("Longitude : " + df.format(lon));
 
             updateObject();
+
         } else {
             graphic.setVisible(false);
+        }
+
+        if(distance <= 3.000){
+            graphRange.setVisible(true);
+            graphRange1.setVisible(true);
+        } else {
+            graphRange.setVisible(false);
+            graphRange1.setVisible(false);
         }
     }
 
