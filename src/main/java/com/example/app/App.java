@@ -1,6 +1,7 @@
 package com.example.app;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.*;
 import com.esri.arcgisruntime.geometry.Polyline;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
@@ -12,9 +13,11 @@ import com.esri.arcgisruntime.symbology.*;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -22,6 +25,8 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 
 import java.text.DecimalFormat;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class App extends Application {
 
@@ -30,21 +35,21 @@ public class App extends Application {
     private Scene scene;
     private Group group;
     private StackPane root;
-    private GraphicsOverlay graphicsOverlay;
-    private Graphic scanningArea, graphic, updateObject;
-    private Point point, point2, posisi, centerPoint, range, range1, range2, range3, range4, range5;
-    private SimpleMarkerSymbol symbol, warningSymbol, dangerSymbol;
+    private GraphicsOverlay overlayMap, overlayObject, overlay2;
+    private Graphic scanningArea, graphic, graphic2, updateObject, updateObject2;
+    private Point point, point2, point3,  point4, posisi, posisi2, centerPoint, range, range1, range2, range3;
+    private SimpleMarkerSymbol symbol, warningSymbol, dangerSymbol, symbol2;
     private SimpleLineSymbol stroke, lineSymbol, lineRad;
     private SimpleFillSymbol fillRadar, fillRange, fillRange1;
-    private VBox displayInfo;
+    private VBox displayInfo, displayButton;
     private AnimationTimer animationTimer;
     private Label label, labelLat, labelLong, labelDistance, labelSudut;
-    private PointCollection points, pointCircle, pointCircle1, pointCircle2, pointCircle3, pointCircle4;
+    private PointCollection points, pointCircle, pointCircle1, pointCircle2, pointCircle3;
     private DecimalFormat df, df2;
-    private Polyline polyCircle, polyCircle1, polyCircle2, polyCircle3, polyCircle4;
+    private Polyline polyCircle, polyCircle1, polyCircle2, polyCircle3;
     private Point tA, tA1, tA2, tA3, tA4, tA5, tA6, tA7, tA8, tA9, tA10, titikAwal;
     private Graphic graphText, graphText1, graphText2, graphText3, graphRange, graphRange1;
-    private Graphic graphCircle, graphCircle1, graphCircle2, graphCircle3, graphCircle4;
+    private Graphic graphCircle, graphCircle1, graphCircle2, graphCircle3;
     private Graphic numGraphic, numGraphic1, numGraphic2, numGraphic3, numGraphic4, numGraphic5,
             numGraphic6, numGraphic7, numGraphic8, numGraphic9, numGraphic10, numGraphic11;
     private TextSymbol radText, radText1, radText2, radText3;
@@ -59,6 +64,9 @@ public class App extends Application {
     private final double scale = 91000;
     private final double radius = 0.0535; // 6 / 111
     private double rotationAngle = 0;
+    private double distance, lat, lon, sudut, degrees, sudutRad;
+    private double distance2, lat2, lon2, sudut2, degrees2, sudutRad2;
+    private boolean logic, logic2;
 
     public static void main(String[] args) {
         launch(args);
@@ -98,8 +106,12 @@ public class App extends Application {
         primaryStage.show();
 
         // Create a graphics overlay to display the location A and B
-        graphicsOverlay = new GraphicsOverlay();
-        mapView.getGraphicsOverlays().add(graphicsOverlay);
+        overlayObject = new GraphicsOverlay();
+        overlay2 = new GraphicsOverlay();
+        overlayMap = new GraphicsOverlay();
+        mapView.getGraphicsOverlays().add(overlayMap);
+        mapView.getGraphicsOverlays().add(overlay2);
+        mapView.getGraphicsOverlays().add(overlayObject);
 
         // Create a Label to display latitude and longitude
         label = new Label();
@@ -139,9 +151,24 @@ public class App extends Application {
         root.setAlignment(displayInfo, Pos.TOP_LEFT);
         root.setMargin(displayInfo, new Insets(60, 0, 0, 20));
 
+        // create a control panel
+        displayButton = new VBox(10);
+        displayButton.setBackground(new Background(new BackgroundFill(Paint.valueOf("rgba(0, 0, 0, 0.3)"), CornerRadii.EMPTY, Insets.EMPTY)));
+        displayButton.setPadding(new Insets(10.0));
+        displayButton.setMaxSize(200, 80);
+        displayButton.getStyleClass().add("panel-region");
+
+        // add scene view, label and control panel to the stack pane
+        root.getChildren().add(displayButton);
+        root.setAlignment(displayButton, Pos.TOP_RIGHT);
+        root.setMargin(displayButton, new Insets(60, 20, 0, 0));
+
         // add location A and B for movement object
-//        addObject( -6.932581890834847, 107.64582546015241, -6.812463080435314, 107.55275371743387);
-        addObject( -6.938633031473232, 107.55341813907535, -6.820136022973438, 107.60990126818064);
+//        object( -6.932581890834847, 107.64582546015241, -6.812463080435314, 107.55275371743387);
+        object( -6.857902970144943, 107.56870633355435, -6.857804514931573, 107.63053552961236);
+        addObject( -6.938633031473232, 107.55341813907535,
+                -6.820136022973438, 107.60990126818064);
+
 
         centerPoint = new Point ( cenY, cenX, SpatialReferences.getWgs84());
         addCircle();
@@ -158,7 +185,7 @@ public class App extends Application {
         scanningArea.setSymbol(fillRadar);
 
         // add the scanning area graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(scanningArea);
+        overlayMap.getGraphics().add(scanningArea);
 
         // create an AnimationTimer for rotating the scanning area graphic
         animationTimer = new AnimationTimer() {
@@ -197,7 +224,7 @@ public class App extends Application {
             points.add(endPoint);
             Polyline polyline = new Polyline(points);
             Graphic lineGraph = new Graphic(polyline, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph);
+            overlayMap.getGraphics().add(lineGraph);
         }
 
         for (int i = 0; i < 360; i+=10){
@@ -217,7 +244,7 @@ public class App extends Application {
             points1.add(endPoint1);
             Polyline polyline1 = new Polyline(points1);
             Graphic lineGraph1 = new Graphic(polyline1, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph1);
+            overlayMap.getGraphics().add(lineGraph1);
         }
 
         for (int i = 0; i < 360; i+=30){
@@ -237,7 +264,7 @@ public class App extends Application {
             points2.add(endPoint2);
             Polyline polyline2 = new Polyline(points2);
             Graphic lineGraph2 = new Graphic(polyline2, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph2);
+            overlayMap.getGraphics().add(lineGraph2);
         }
 
         for (int i = 0; i < 360; i+=30){
@@ -257,7 +284,7 @@ public class App extends Application {
             points3.add(endPoint3);
             Polyline polyline3 = new Polyline(points3);
             Graphic lineGraph3 = new Graphic(polyline3, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph3);
+            overlayMap.getGraphics().add(lineGraph3);
         }
 
         for (int i = 0; i < 360; i+=30){
@@ -277,7 +304,7 @@ public class App extends Application {
             points4.add(endPoint4);
             Polyline polyline4 = new Polyline(points4);
             Graphic lineGraph4 = new Graphic(polyline4, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph4);
+            overlayMap.getGraphics().add(lineGraph4);
         }
 
         for (int i = 0; i < 360; i+=90){
@@ -297,10 +324,58 @@ public class App extends Application {
             points5.add(endPoint5);
             Polyline polyline5 = new Polyline(points5);
             Graphic lineGraph5 = new Graphic(polyline5, lineRad);
-            graphicsOverlay.getGraphics().add(lineGraph5);
+            overlayMap.getGraphics().add(lineGraph5);
         }
+
+        mapView.setOnMouseClicked(event -> {
+            if (event.isStillSincePress()) {
+                // Hanya tangani event saat tombol mouse dilepas setelah diklik
+                Point2D clickLocation = new Point2D(event.getX(), event.getY());
+
+                // Melakukan identifikasi terhadap grafik yang diklik
+                ListenableFuture<IdentifyGraphicsOverlayResult> identifyResult = mapView.identifyGraphicsOverlayAsync(
+                        overlayObject, clickLocation, 10, false);
+                identifyResult.addDoneListener(() -> {
+                    try {
+                        IdentifyGraphicsOverlayResult graphicsOverlayResult = identifyResult.get();
+                        List<Graphic> graphics = graphicsOverlayResult.getGraphics();
+
+                        if (!graphics.isEmpty()) {
+                            Graphic selectedGraphic = graphics.get(0);
+                            // Proses pemilihan grafik yang diklik
+                            showObjectInfo(selectedGraphic);
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                // Melakukan identifikasi terhadap grafik yang diklik
+                ListenableFuture<IdentifyGraphicsOverlayResult> result = mapView.identifyGraphicsOverlayAsync(
+                        overlay2, clickLocation, 10, false);
+                identifyResult.addDoneListener(() -> {
+                    try {
+                        IdentifyGraphicsOverlayResult graphicsOverlayResult = result.get();
+                        List<Graphic> graphics = graphicsOverlayResult.getGraphics();
+
+                        if (!graphics.isEmpty()) {
+                            Graphic selectedGraphic = graphics.get(0);
+                            // Proses pemilihan grafik yang diklik
+                            showObjectInfo2(selectedGraphic);
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        });
     }
 
+    // overlay map and radar
     private void addCircle() {
         // Buat simbol untuk garis tepi (stroke)
         stroke = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2.0f);
@@ -313,7 +388,7 @@ public class App extends Application {
         graphRange = new Graphic(centerPoint, warningSymbol);
         graphRange.setVisible(false);
         // Add the graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(graphRange);
+        overlayMap.getGraphics().add(graphRange);
 
         // danger symbol with red
         dangerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0x40FF0000, 125);
@@ -321,7 +396,7 @@ public class App extends Application {
         graphRange1 = new Graphic(centerPoint, dangerSymbol);
         graphRange1.setVisible(false);
         // Add the graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(graphRange1);
+        overlayMap.getGraphics().add(graphRange1);
 
         for(int i = 0 ; i <= 360 ; i++){
             double cX = centerPoint.getX() + 0.0536 * Math.cos(Math.toRadians(i));
@@ -337,7 +412,7 @@ public class App extends Application {
             pointCircle.add(circle2);
             polyCircle= new Polyline(pointCircle);
             graphCircle = new Graphic(polyCircle, stroke);
-            graphicsOverlay.getGraphics().add(graphCircle);
+            overlayMap.getGraphics().add(graphCircle);
         }
 
         for(int i = 0 ; i <= 360 ; i++){
@@ -354,7 +429,7 @@ public class App extends Application {
             pointCircle1.add(circle2);
             polyCircle1= new Polyline(pointCircle1);
             graphCircle1 = new Graphic(polyCircle1, stroke);
-            graphicsOverlay.getGraphics().add(graphCircle1);
+            overlayMap.getGraphics().add(graphCircle1);
         }
 
         for(int i = 0 ; i <= 360 ; i++){
@@ -371,7 +446,7 @@ public class App extends Application {
             pointCircle2.add(range1);
             polyCircle2 = new Polyline(pointCircle2);
             graphCircle2 = new Graphic(polyCircle2, stroke);
-            graphicsOverlay.getGraphics().add(graphCircle2);
+            overlayMap.getGraphics().add(graphCircle2);
         }
 
         for(int i = 0 ; i <= 360 ; i++){
@@ -388,7 +463,7 @@ public class App extends Application {
             pointCircle3.add(range3);
             polyCircle3 = new Polyline(pointCircle3);
             graphCircle3 = new Graphic(polyCircle3, stroke);
-            graphicsOverlay.getGraphics().add(graphCircle3);
+            overlayMap.getGraphics().add(graphCircle3);
         }
     }
 
@@ -418,10 +493,10 @@ public class App extends Application {
         graphText2 = new Graphic(centerPoint, radText2);
         graphText3 = new Graphic(centerPoint, radText3);
 
-        graphicsOverlay.getGraphics().add(graphText);
-        graphicsOverlay.getGraphics().add(graphText1);
-        graphicsOverlay.getGraphics().add(graphText2);
-        graphicsOverlay.getGraphics().add(graphText3);
+        overlayMap.getGraphics().add(graphText);
+        overlayMap.getGraphics().add(graphText1);
+        overlayMap.getGraphics().add(graphText2);
+        overlayMap.getGraphics().add(graphText3);
     }
 
     private void addNumber() {
@@ -499,24 +574,24 @@ public class App extends Application {
         numGraphic10 = new Graphic(centerPoint, numText10);
         numGraphic11 = new Graphic(centerPoint, numText11);
 
-        graphicsOverlay.getGraphics().add(numGraphic);
-        graphicsOverlay.getGraphics().add(numGraphic1);
-        graphicsOverlay.getGraphics().add(numGraphic2);
-        graphicsOverlay.getGraphics().add(numGraphic3);
-        graphicsOverlay.getGraphics().add(numGraphic4);
-        graphicsOverlay.getGraphics().add(numGraphic5);
-        graphicsOverlay.getGraphics().add(numGraphic6);
-        graphicsOverlay.getGraphics().add(numGraphic7);
-        graphicsOverlay.getGraphics().add(numGraphic8);
-        graphicsOverlay.getGraphics().add(numGraphic9);
-        graphicsOverlay.getGraphics().add(numGraphic10);
-        graphicsOverlay.getGraphics().add(numGraphic11);
+        overlayMap.getGraphics().add(numGraphic);
+        overlayMap.getGraphics().add(numGraphic1);
+        overlayMap.getGraphics().add(numGraphic2);
+        overlayMap.getGraphics().add(numGraphic3);
+        overlayMap.getGraphics().add(numGraphic4);
+        overlayMap.getGraphics().add(numGraphic5);
+        overlayMap.getGraphics().add(numGraphic6);
+        overlayMap.getGraphics().add(numGraphic7);
+        overlayMap.getGraphics().add(numGraphic8);
+        overlayMap.getGraphics().add(numGraphic9);
+        overlayMap.getGraphics().add(numGraphic10);
+        overlayMap.getGraphics().add(numGraphic11);
 
     }
 
     private void updateScanningArea(Point centerPoint, double radius, double rotationAngle) {
         // remove the old scanning area graphic
-        graphicsOverlay.getGraphics().remove(scanningArea);
+        overlayMap.getGraphics().remove(scanningArea);
 
         // create the new scanning area graphic
         scanningArea = createScanningArea(centerPoint, radius, rotationAngle);
@@ -528,7 +603,7 @@ public class App extends Application {
         scanningArea.setSymbol(fillRadar);
 
         // add the new scanning area graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(scanningArea);
+        overlayMap.getGraphics().add(scanningArea);
     }
 
     private Graphic createScanningArea(Point centerPoint, double radius, double rotationAngle) {
@@ -598,21 +673,25 @@ public class App extends Application {
         return new Graphic(polygon);
     }
 
+    // logic object 1
     private void addObject(double x, double y, double x1, double y1) {
         // Create a point graphic at the specified location
         point = new Point(y, x, SpatialReferences.getWgs84());
         point2 = new Point(y1, x1, SpatialReferences.getWgs84());
 
         // Create a symbol for the moving object (a simple red circle)
-        symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 10);
+        symbol = new SimpleMarkerSymbol();
+        symbol.setStyle(SimpleMarkerSymbol.Style.CIRCLE);
+        symbol.setColor(Color.BLUE);
+        symbol.setSize(10);
 
         // Create the graphic with the start point and symbol
         graphic = new Graphic(point, symbol);
         graphic.setVisible(false);
 
         // Add the graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(graphic);
-        graphicsOverlay.getOpacity();
+        overlayObject.getGraphics().add(graphic);
+        overlayObject.getOpacity();
 
         // Start animation
         animationTimer = new AnimationTimer() {
@@ -638,65 +717,208 @@ public class App extends Application {
         animationTimer.start();
     }
 
-    private void logic(){
+    private void logic() {
         // get distance object
-        double distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+        distance = GeometryEngine.distanceGeodetic(posisi, centerPoint,
                 new LinearUnit(LinearUnitId.KILOMETERS),
                 new AngularUnit(AngularUnitId.DEGREES),
                 GeodeticCurveType.GEODESIC).getDistance();
 
-        double degrees = GeometryEngine.distanceGeodetic(posisi, centerPoint,
+        degrees = GeometryEngine.distanceGeodetic(posisi, centerPoint,
                 new LinearUnit(LinearUnitId.KILOMETERS),
                 new AngularUnit(AngularUnitId.DEGREES),
                 GeodeticCurveType.GEODESIC).getAzimuth2();
 
-        double sudut = degrees;
-        if(sudut < 0){
+        sudut = degrees;
+        if (sudut < 0) {
             sudut += 360;
         }
 
         //   set lat lon object
-        double sudutRad = Math.toRadians(degrees);
-        double lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
-        double lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
+        sudutRad = Math.toRadians(degrees);
+        lat = centerPoint.getY() + ((distance * Math.sin(sudutRad) / 111));
+        lon = centerPoint.getX() + ((distance * Math.cos(sudutRad) / 111));
 
         df = new DecimalFormat("0.000000");
         df2 = new DecimalFormat("0.000");
 
         // logic for object
-        boolean logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
-        if (logic){
+        logic = GeometryEngine.intersects(graphic.getGeometry(), scanningArea.getGeometry());
+        if (logic) {
             graphic.setVisible(true);
+            updateObject();
+        } else {
+            graphic.setVisible(false);
+        }
+        logicDist();
+    }
+
+    private void updateObject(){
+        // remove the old scanning area graphic
+        overlayObject.getGraphics().remove(updateObject);
+        // create the new scanning area graphic
+        updateObject =  new Graphic(graphic.getGeometry(), symbol);
+        // add the new scanning area graphic to the graphics overlay
+        overlayObject.getGraphics().add(updateObject);
+    }
+
+    private void showObjectInfo(Graphic clickedObject) {
+        // Hapus konten sebelumnya dari VBox
+        displayButton.getChildren().clear();
+
+        if (clickedObject != null) {
+            // Tampilkan informasi objek dalam Label atau komponen lain
+            Label infoLabel = new Label(clickedObject.toString());
+            infoLabel.setText("Choose Object 1");
+            infoLabel.setTextFill(Color.WHITE);
+            Button hostile = new Button("Hostile");
+            hostile.setOnAction(event ->{
+                symbol.setColor(Color.RED);
+            });
+            Button friend = new Button("Friend");
+            friend.setOnAction(event -> {
+                symbol.setColor(Color.GREEN);
+            });
+            Button netral = new Button("Netral");
+            netral.setOnAction(event -> {
+                symbol.setColor(Color.BLUE);
+            });
+            displayButton.getChildren().addAll(infoLabel, hostile, friend, netral);
 
             labelSudut.setText("Sudut        : " + df2.format(sudut) + "°");
             labelDistance.setText("Distance   : " + df2.format(distance) + " km");
             labelLat.setText("Latitude    : " + df.format(lat));
             labelLong.setText("Longitude : " + df.format(lon));
+        }
+    }
 
-            updateObject();
+    // logic object 2
+    private void object(double x, double y, double x1, double y1) {
+        // Create a point graphic at the specified location
+        point3 = new Point(y, x, SpatialReferences.getWgs84());
+        point4 = new Point(y1, x1, SpatialReferences.getWgs84());
 
-        } else {
-            graphic.setVisible(false);
+        // Create a symbol for the moving object (a simple red circle)
+        symbol2 = new SimpleMarkerSymbol();
+        symbol2.setStyle(SimpleMarkerSymbol.Style.CIRCLE);
+        symbol2.setColor(Color.BLUE);
+        symbol2.setSize(10);
+
+        // Create the graphic with the start point and symbol
+        graphic2 = new Graphic(point3, symbol2);
+        graphic2.setVisible(false);
+
+        // Add the graphic to the graphics overlay
+        overlay2.getGraphics().add(graphic2);
+        overlay2.getOpacity();
+
+        // Start animation
+        animationTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                // Update progress (value between 0 and 1)
+                progress += 0.0001; // Change this value to adjust animation speed
+                if (progress >= 1) {
+                    progress = 0;
+                }
+
+                // Calculate current location based on progress
+                double currentX = point3.getX() + (point4.getX() - point3.getX()) * progress;
+                double currentY = point3.getY() + (point4.getY() - point3.getY()) * progress;
+                posisi2 = new Point(currentX, currentY, SpatialReferences.getWgs84());
+
+                // Set the current location for the graphic
+                graphic2.setGeometry(posisi2);
+
+                logic2();
+            }
+        };
+        animationTimer.start();
+    }
+
+    private void logic2() {
+        // get distance object
+        distance2 = GeometryEngine.distanceGeodetic(posisi2, centerPoint,
+                new LinearUnit(LinearUnitId.KILOMETERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getDistance();
+
+        degrees2 = GeometryEngine.distanceGeodetic(posisi2, centerPoint,
+                new LinearUnit(LinearUnitId.KILOMETERS),
+                new AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC).getAzimuth2();
+
+        sudut2 = degrees2;
+        if (sudut2 < 0) {
+            sudut2 += 360;
         }
 
-        if(distance <= 3.000){
+        //   set lat lon object
+        sudutRad2 = Math.toRadians(degrees2);
+        lat2 = centerPoint.getY() + ((distance2 * Math.sin(sudutRad2) / 111));
+        lon2 = centerPoint.getX() + ((distance2 * Math.cos(sudutRad2) / 111));
+
+        // logic for object
+        logic2 = GeometryEngine.intersects(graphic2.getGeometry(), scanningArea.getGeometry());
+        if (logic2) {
+            graphic2.setVisible(true);
+            updateObject2();
+        } else {
+            graphic2.setVisible(false);
+        }
+    }
+
+    private void updateObject2(){
+        // remove the old scanning area graphic
+        overlay2.getGraphics().remove(updateObject2);
+        // create the new scanning area graphic
+        updateObject2 =  new Graphic(graphic2.getGeometry(), symbol2);
+        // add the new scanning area graphic to the graphics overlay
+        overlay2.getGraphics().add(updateObject2);
+    }
+
+    private void showObjectInfo2(Graphic clickedObject) {
+        // Hapus konten sebelumnya dari VBox
+        displayButton.getChildren().clear();
+
+        if (clickedObject != null) {
+            // Tampilkan informasi objek dalam Label atau komponen lain
+            Label infoLabel = new Label(clickedObject.toString());
+            infoLabel.setText("Choose Object 2");
+            infoLabel.setTextFill(Color.WHITE);
+            Button hostile = new Button("Hostile");
+            hostile.setOnAction(event ->{
+                symbol2.setColor(Color.RED);
+            });
+            Button friend = new Button("Friend");
+            friend.setOnAction(event -> {
+                symbol2.setColor(Color.GREEN);
+            });
+            Button netral = new Button("Netral");
+            netral.setOnAction(event -> {
+                symbol2.setColor(Color.BLUE);
+            });
+            displayButton.getChildren().addAll(infoLabel, hostile, friend, netral);
+
+            labelSudut.setText("Sudut        : " + df2.format(sudut2) + "°");
+            labelDistance.setText("Distance   : " + df2.format(distance2) + " km");
+            labelLat.setText("Latitude    : " + df.format(lat2));
+            labelLong.setText("Longitude : " + df.format(lon2));
+        }
+    }
+
+    // logic pelengkap
+    private void logicDist(){
+        if (distance <= 3.000){
+            graphRange.setVisible(true);
+            graphRange1.setVisible(true);
+        } else if (distance2 <= 3.000){
             graphRange.setVisible(true);
             graphRange1.setVisible(true);
         } else {
             graphRange.setVisible(false);
             graphRange1.setVisible(false);
         }
-    }
-
-    private void updateObject(){
-        // remove the old scanning area graphic
-        graphicsOverlay.getGraphics().remove(updateObject);
-
-        // create the new scanning area graphic
-        updateObject =  new Graphic(graphic.getGeometry(), symbol);
-
-        // add the new scanning area graphic to the graphics overlay
-        graphicsOverlay.getGraphics().add(updateObject);
     }
 
     @Override
